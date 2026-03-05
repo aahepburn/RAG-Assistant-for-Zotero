@@ -55,6 +55,12 @@ const Settings: React.FC = () => {
     setSaveError(null);
   };
 
+  const handleBooleanChange = (field: keyof typeof formData, value: boolean) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    setSaveSuccess(false);
+    setSaveError(null);
+  };
+
   const handleProviderEnabledChange = (providerId: string, enabled: boolean) => {
     setFormData(prev => ({
       ...prev,
@@ -193,6 +199,43 @@ const Settings: React.FC = () => {
     }
   };
 
+  const handleSaveAndTest = async (providerId: string) => {
+    try {
+      // First, save the settings
+      setSaving(true);
+      setSaveError(null);
+      
+      // Filter out masked API keys before saving
+      const dataToSave = {
+        ...formData,
+        providers: { ...formData.providers }
+      };
+      
+      Object.keys(dataToSave.providers).forEach(pid => {
+        const providerData = dataToSave.providers[pid];
+        if (providerData.credentials?.api_key && providerData.credentials.api_key.includes('•')) {
+          // Don't send masked key - backend will keep existing key
+          dataToSave.providers[pid] = {
+            ...providerData,
+            credentials: {
+              ...providerData.credentials,
+              api_key: settings.providers[pid]?.credentials?.api_key || ''
+            }
+          };
+        }
+      });
+      
+      await updateSettings(dataToSave);
+      setSaving(false);
+      
+      // Then, validate the provider
+      await validateProvider(providerId);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Failed to save settings');
+      setSaving(false);
+    }
+  };
+
   const getProviderInfo = (providerId: string): ProviderInfo | undefined => {
     return availableProviders.find(p => p.id === providerId);
   };
@@ -282,6 +325,33 @@ const Settings: React.FC = () => {
               </div>
             )}
             
+            {/* Custom endpoint support for OpenAI-compatible providers */}
+            {['openai', 'mistral', 'groq', 'openrouter'].includes(provider.id) && (
+              <div className="settings-field">
+                <label className="settings-label" htmlFor={`${provider.id}-base-url`}>
+                  Custom Endpoint (Optional)
+                </label>
+                <Input
+                  id={`${provider.id}-base-url`}
+                  type="text"
+                  value={config.credentials.base_url || ''}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    handleProviderCredentialChange(provider.id, 'base_url', e.target.value)
+                  }
+                  placeholder={
+                    provider.id === 'openai' ? 'https://api.openai.com/v1' :
+                    provider.id === 'mistral' ? 'https://api.mistral.ai/v1' :
+                    provider.id === 'groq' ? 'https://api.groq.com/openai/v1' :
+                    'https://openrouter.ai/api/v1'
+                  }
+                  className="settings-input"
+                />
+                <p className="settings-helper-text">
+                  Leave blank to use the default endpoint. Useful for Azure OpenAI, proxies, or custom deployments.
+                </p>
+              </div>
+            )}
+            
             {provider.id === 'ollama' && (
               <div className="settings-field">
                 <label className="settings-label" htmlFor="ollama-base-url">
@@ -321,11 +391,11 @@ const Settings: React.FC = () => {
             )}
 
             <Button
-              onClick={() => validateProvider(provider.id)}
+              onClick={() => handleSaveAndTest(provider.id)}
               variant="secondary"
-              disabled={isValidating}
+              disabled={isValidating || saving}
             >
-              {isValidating ? 'Testing...' : 'Test Connection'}
+              {isValidating ? 'Testing...' : saving ? 'Saving...' : 'Save & Test'}
             </Button>
           </div>
         )}
@@ -459,7 +529,7 @@ const Settings: React.FC = () => {
               <input
                 type="checkbox"
                 checked={formData.showSystemNotification ?? true}
-                onChange={(e) => handleInputChange('showSystemNotification', e.target.checked)}
+                onChange={(e) => handleBooleanChange('showSystemNotification', e.target.checked)}
                 style={{ 
                   marginRight: '8px', 
                   width: '18px', 
@@ -480,7 +550,7 @@ const Settings: React.FC = () => {
               <input
                 type="checkbox"
                 checked={formData.playSoundNotification ?? false}
-                onChange={(e) => handleInputChange('playSoundNotification', e.target.checked)}
+                onChange={(e) => handleBooleanChange('playSoundNotification', e.target.checked)}
                 style={{ 
                   marginRight: '8px', 
                   width: '18px', 
@@ -630,21 +700,28 @@ const Settings: React.FC = () => {
               
               <div className="settings-note" style={{ 
                 marginTop: '16px',
-                padding: '12px', 
-                backgroundColor: 'var(--bg-hover, #f8f9fa)', 
-                borderLeft: '3px solid var(--text-muted, #6c757d)', 
+                padding: '14px', 
+                backgroundColor: '#d4edda', 
+                borderLeft: '4px solid #28a745', 
                 fontSize: '13px',
-                color: 'var(--text-muted)'
+                color: '#155724',
+                borderRadius: '4px'
               }}>
-                <strong>Note:</strong> Automatic updates are disabled. When a new version is available, you'll need to download and install it manually from{' '}
-                <a 
-                  href="https://github.com/aahepburn/RAG-Assistant-for-Zotero/releases" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  style={{ color: 'var(--accent, #007bff)', textDecoration: 'underline' }}
-                >
-                  GitHub Releases
-                </a>.
+                <strong style={{ display: 'block', marginBottom: '6px' }}>✓ Safe Manual Updates</strong>
+                <p style={{ margin: '0 0 8px 0', lineHeight: '1.5' }}>
+                  Automatic updates are disabled. When a new version is available, you'll need to download and install it manually from{' '}
+                  <a 
+                    href="https://github.com/aahepburn/RAG-Assistant-for-Zotero/releases" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    style={{ color: '#0c5d29', textDecoration: 'underline', fontWeight: '500' }}
+                  >
+                    GitHub Releases
+                  </a>.
+                </p>
+                <p style={{ margin: '0', fontSize: '12px', opacity: '0.9' }}>
+                  <strong>Your data is safe:</strong> Profile configurations, API keys, embeddings, and all settings will persist across updates.
+                </p>
               </div>
             </div>
           </section>

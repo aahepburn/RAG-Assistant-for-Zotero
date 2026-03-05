@@ -49,9 +49,12 @@ class MistralProvider(BaseProvider):
         if not api_key:
             raise ProviderAuthenticationError("Mistral API key is required")
         
+        # Support custom endpoints (e.g., for proxies or custom deployments)
+        base_url = credentials.get("base_url", "https://api.mistral.ai/v1")
+        
         return OpenAI(
             api_key=api_key,
-            base_url="https://api.mistral.ai/v1"
+            base_url=base_url
         )
     
     def validate_credentials(self, credentials: Dict[str, Any]) -> bool:
@@ -678,9 +681,12 @@ class GroqProvider(BaseProvider):
         if not api_key:
             raise ProviderAuthenticationError("Groq API key is required")
         
+        # Support custom endpoints (e.g., for proxies or custom deployments)
+        base_url = credentials.get("base_url", "https://api.groq.com/openai/v1")
+        
         return OpenAI(
             api_key=api_key,
-            base_url="https://api.groq.com/openai/v1"
+            base_url=base_url
         )
     
     def validate_credentials(self, credentials: Dict[str, Any]) -> bool:
@@ -854,9 +860,12 @@ class OpenRouterProvider(BaseProvider):
         if not api_key:
             raise ProviderAuthenticationError("OpenRouter API key is required")
         
+        # Support custom endpoints (e.g., for proxies or custom deployments)
+        base_url = credentials.get("base_url", "https://openrouter.ai/api/v1")
+        
         return OpenAI(
             api_key=api_key,
-            base_url="https://openrouter.ai/api/v1"
+            base_url=base_url
         )
     
     def validate_credentials(self, credentials: Dict[str, Any]) -> bool:

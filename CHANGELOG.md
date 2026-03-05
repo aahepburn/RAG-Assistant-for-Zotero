@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.4] - 2026-03-05
+
+### Added
+- **Custom Endpoint Support**: OpenAI-compatible providers (OpenAI, Mistral, Groq, OpenRouter) now support optional custom endpoint configuration
+  - Enables Azure OpenAI, proxy servers, and custom deployments
+  - Backward compatible: defaults to standard endpoints when not configured
+
+### Changed
+- **Save & Test Button**: API key testing now automatically saves settings first, eliminating "test failed because you didn't save" confusion
+- **Update Notice UX**: Manual update notification now displays in reassuring green with clear messaging that profiles, embeddings, and settings persist across updates
+
+### Fixed
+- **License Inclusion**: macOS DMG now includes correct Apache 2.0 license file (was incorrectly showing MIT)
+- **Sound Notifications**: Fixed TypeScript errors preventing sound notification settings from saving properly
+
 ## [0.4.3] - 2026-02-22
 
 ### Changed
