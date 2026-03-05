@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.4.4] - 2026-03-05
+## [0.4.5] - 2026-03-05
 
 ### Added
 - **Custom Endpoint Support**: OpenAI-compatible providers (OpenAI, Mistral, Groq, OpenRouter) now support optional custom endpoint configuration
